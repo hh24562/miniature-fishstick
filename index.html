@@ -75,7 +75,7 @@
 <body>
     <div class="player-container">
         <button class="play-button" id="playButton">
-            <svg class="play-icon" viewBox="0 0 24 24">
+            <svg class="play-icon" id="playIcon" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
             </svg>
         </button>
@@ -86,7 +86,7 @@
     </div>
 
     <!-- 直接用 audio 标签 -->
-    <audio id="audioPlayer" controls style="display: none;">
+    <audio id="audioPlayer">
         <source src="beijiaer.mp3" type="audio/mpeg">
         您的浏览器不支持音频播放。
     </audio>
@@ -94,20 +94,30 @@
     <script>
         const audioPlayer = document.getElementById('audioPlayer');
         const playButton = document.getElementById('playButton');
+        const playIcon = document.getElementById('playIcon');
         let isPlaying = false;
 
         playButton.addEventListener('click', function() {
             if (isPlaying) {
+                // 暂停播放
                 audioPlayer.pause();
-                playButton.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
+                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                 isPlaying = false;
             } else {
-                audioPlayer.play().catch(error => {
-                    console.error('播放失败:', error);
-                    alert('播放失败，请检查文件是否存在');
-                });
-                playButton.querySelector('svg').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                isPlaying = true;
+                // 播放音频
+                const playPromise = audioPlayer.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // 播放成功
+                        playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                        isPlaying = true;
+                    }).catch(error => {
+                        // 播放失败
+                        console.error('播放失败:', error);
+                        alert('播放失败: ' + error.message);
+                    });
+                }
             }
         });
 
