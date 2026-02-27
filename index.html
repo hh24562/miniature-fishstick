@@ -75,7 +75,7 @@
 <body>
     <div class="player-container">
         <button class="play-button" id="playButton">
-            <svg class="play-icon" id="playIcon" viewBox="0 0 24 24">
+            <svg class="play-icon" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
             </svg>
         </button>
@@ -94,26 +94,30 @@
     <script>
         const audioPlayer = document.getElementById('audioPlayer');
         const playButton = document.getElementById('playButton');
-        const playIcon = document.getElementById('playIcon');
         let isPlaying = false;
 
+        console.log('页面加载完成');
+        console.log('audioPlayer:', audioPlayer);
+        console.log('playButton:', playButton);
+
         playButton.addEventListener('click', function() {
+            console.log('播放按钮被点击，isPlaying:', isPlaying);
+            
             if (isPlaying) {
-                // 暂停播放
+                console.log('暂停播放');
                 audioPlayer.pause();
-                playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                playButton.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
                 isPlaying = false;
             } else {
-                // 播放音频
+                console.log('开始播放');
                 const playPromise = audioPlayer.play();
                 
                 if (playPromise !== undefined) {
                     playPromise.then(() => {
-                        // 播放成功
-                        playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                        console.log('播放成功');
+                        playButton.querySelector('svg').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
                         isPlaying = true;
                     }).catch(error => {
-                        // 播放失败
                         console.error('播放失败:', error);
                         alert('播放失败: ' + error.message);
                     });
@@ -121,9 +125,17 @@
             }
         });
 
-        // 显示原生播放器（调试用）
-        console.log('audioPlayer:', audioPlayer);
-        console.log('src:', audioPlayer.querySelector('source').src);
+        // 音频加载事件
+        audioPlayer.addEventListener('canplay', function() {
+            console.log('音频已加载，可以播放');
+        });
+
+        audioPlayer.addEventListener('error', function() {
+            console.error('音频加载失败');
+            alert('音频文件加载失败，请检查 beijiaer.mp3 是否存在');
+        });
+
+        console.log('音频源:', audioPlayer.querySelector('source').src);
     </script>
 </body>
 </html>
