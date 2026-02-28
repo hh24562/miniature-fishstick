@@ -1,304 +1,105 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>随机音乐播放器</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Music</title>
     <style>
-        * {
+        /* 1. 页面基础设置：全屏、黑色背景、居中 */
+        body, html {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            height: 100%;
+            background-color: #000000; /* 背景色，可改 */
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 20px;
+            align-items: center;
+            overflow: hidden; /* 防止滚动 */
         }
-        
-        .player-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        
-        .player-title {
-            text-align: center;
-            color: #333;
-            margin-bottom: 25px;
-            font-size: 1.3em;
-            font-weight: 600;
-        }
-        
-        .audio-wrapper {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        audio {
-            width: 100%;
-            height: 50px;
-            border-radius: 10px;
-            /* 隐藏原生音频控件 */
-            display: none;
-        }
-        
-        .custom-play-btn {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+        /* 2. 播放按钮样式 */
+        #playBtn {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%; /* 圆形 */
+            background-color: #ffffff; /* 按钮颜色 */
             border: none;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            outline: none;
+            -webkit-tap-highlight-color: transparent; /* 去除手机点击高亮 */
         }
-        
-        .custom-play-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
-        }
-        
-        .custom-play-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .play-icon {
+
+        /* 按钮内的播放图标 (三角形) */
+        #playBtn::after {
+            content: '';
+            display: block;
             width: 0;
             height: 0;
-            border-left: 35px solid white;
-            border-top: 20px solid transparent;
-            border-bottom: 20px solid transparent;
-            margin-left: 8px;
+            border-left: 40px solid #000; /* 图标颜色 */
+            border-top: 25px solid transparent;
+            border-bottom: 25px solid transparent;
+            margin-left: 10px; /* 视觉居中修正 */
+            transition: all 0.3s ease;
         }
-        
-        .pause-icon {
-            width: 30px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+
+        /* 3. 播放时的样式变化 */
+        #playBtn.playing {
+            background-color: #ff4757; /* 播放中变红 */
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.6);
+            animation: pulse 2s infinite; /* 呼吸灯效果 */
         }
-        
-        .pause-icon::before,
-        .pause-icon::after {
-            content: '';
-            width: 12px;
-            height: 35px;
-            background: white;
-            border-radius: 3px;
+
+        /* 播放时图标变成两条竖线 (暂停符号) */
+        #playBtn.playing::after {
+            border: none;
+            width: 15px;
+            height: 50px;
+            background-color: #fff;
+            margin-left: 0;
+            box-shadow: 25px 0 0 #fff; /* 利用阴影做第二根线 */
         }
-        
-        .info-section {
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-        
-        .status {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #f0f0f0;
-            border-radius: 20px;
-            margin-top: 10px;
-            font-size: 0.85em;
-        }
-        
-        .loading {
-            color: #667eea;
-        }
-        
-        .success {
-            color: #10b981;
-        }
-        
-        .error {
-            color: #ef4444;
+
+        /* 呼吸灯动画 */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
-    <div class="player-container">
-        <div class="player-title">三水医院</div>
-        
-        <div class="audio-wrapper">
-            <audio id="player" preload="auto"></audio>
-            <button id="playBtn" class="custom-play-btn" onclick="togglePlay()">
-                <div id="playIcon" class="play-icon"></div>
-            </button>
-        </div>
-        
-        <div class="info-section">
-            <div class="status" id="status">正在初始化...</div>
-            <p style="margin-top: 15px;">当前曲目：<strong id="trackName">加载中</strong></p>
-        </div>
-    </div>
+
+    <!-- 这里填入你的音乐链接 -->
+    <!-- 如果音乐文件和本页面在一起，直接写文件名，例如 src="song.mp3" -->
+    <audio id="audioPlayer" src="beijiaer.mp3"></audio>
+
+    <button id="playBtn"></button>
 
     <script>
-        const player = document.getElementById('player');
-        const playBtn = document.getElementById('playBtn');
-        const playIcon = document.getElementById('playIcon');
-        const statusElement = document.getElementById('status');
-        const trackNameElement = document.getElementById('trackName');
+        const btn = document.getElementById('playBtn');
+        const audio = document.getElementById('audioPlayer');
         let isPlaying = false;
 
-        // 音频文件配置 - 优先使用GitHub Pages链接
-        const audioFiles = [
-            {
-                name: '贝加尔湖畔 - 李健',
-                // 源1: GitHub Pages（直接托管，无CDN延迟）
-                pages: 'https://hh24562.github.io/miniature-fishstick/beijiaer.mp3',
-                // 源2: jsDelivr CDN（可能有同步延迟）
-                cdn: 'https://cdn.jsdelivr.net/gh/hh24562/miniature-fishstick@main/beijiaer.mp3',
-                // 源3: GitHub Raw（备用）
-                raw: 'https://raw.githubusercontent.com/hh24562/miniature-fishstick/main/beijiaer.mp3'
-            }
-        ];
-
-        // 随机选择音频
-        function getRandomAudio() {
-            const randomIndex = Math.floor(Math.random() * audioFiles.length);
-            return audioFiles[randomIndex];
-        }
-
-        // 播放/暂停切换
-        function togglePlay() {
+        btn.addEventListener('click', () => {
             if (isPlaying) {
-                player.pause();
+                audio.pause();
+                btn.classList.remove('playing');
             } else {
-                // 如果没有音频源，先加载
-                if (!player.src) {
-                    loadAudio();
-                }
-                player.play().catch(error => {
-                    console.log('播放失败:', error);
-                    statusElement.textContent = '❌ 播放失败，请重试';
-                });
+                audio.play();
+                btn.classList.add('playing');
             }
-        }
-
-        // 播放音频 - 支持多个备用源
-        function loadAudio() {
-            const selectedAudio = getRandomAudio();
-            
-            statusElement.textContent = '⏳ 正在尝试音源1加载...';
-            statusElement.className = 'status loading';
-            
-            // 优先级：GitHub Pages -> CDN -> GitHub Raw
-            const sources = [
-                selectedAudio.pages,
-                selectedAudio.cdn,
-                selectedAudio.raw
-            ];
-            
-            loadAudioWithFallback(sources, 0, selectedAudio.name);
-        }
-        
-        // 递归尝试不同的音频源
-        function loadAudioWithFallback(sources, index, name) {
-            if (index >= sources.length) {
-                statusElement.textContent = '❌ 所有音源都加载失败';
-                statusElement.className = 'status error';
-                isPlaying = false;
-                updatePlayButton();
-                return;
-            }
-            
-            const currentSource = sources[index];
-            console.log(`尝试音源 ${index + 1}/${sources.length}:`, currentSource);
-            statusElement.textContent = `⏳ 正在尝试音源${index + 1}加载...`;
-            
-            player.src = currentSource;
-            trackNameElement.textContent = name + ` (音源${index + 1})`;
-            
-            // 清除之前的事件监听器
-            player.removeEventListener('canplay', onCanPlay);
-            player.removeEventListener('error', onError);
-            
-            // 定义事件处理函数
-            function onCanPlay() {
-                console.log(`音源 ${index + 1} 加载成功`);
-                statusElement.textContent = '✅ 准备就绪，点击播放';
-                statusElement.className = 'status success';
-                trackNameElement.textContent = name;
-                player.removeEventListener('canplay', onCanPlay);
-                player.removeEventListener('error', onError);
-            }
-            
-            function onError() {
-                console.log(`音源 ${index + 1} 加载失败，尝试下一个...`);
-                player.removeEventListener('canplay', onCanPlay);
-                player.removeEventListener('error', onError);
-                
-                // 尝试下一个源
-                loadAudioWithFallback(sources, index + 1, name);
-            }
-            
-            // 添加新的事件监听器
-            player.addEventListener('canplay', onCanPlay, { once: true });
-            player.addEventListener('error', onError, { once: true });
-            
-            player.load();
-        }
-
-        // 更新播放按钮状态
-        function updatePlayButton() {
-            if (isPlaying) {
-                playIcon.className = 'pause-icon';
-                statusElement.textContent = '▶️ 正在播放';
-                statusElement.className = 'status success';
-            } else {
-                playIcon.className = 'play-icon';
-                if (player.src && player.readyState >= 2) {
-                    statusElement.textContent = '⏸️ 已暂停';
-                } else {
-                    statusElement.textContent = '点击播放按钮';
-                }
-                statusElement.className = 'status';
-            }
-        }
-
-        // 监听播放事件
-        player.addEventListener('play', () => {
-            isPlaying = true;
-            updatePlayButton();
+            isPlaying = !isPlaying;
         });
 
-        player.addEventListener('pause', () => {
+        // 监听音乐播放结束，重置按钮
+        audio.addEventListener('ended', () => {
+            btn.classList.remove('playing');
             isPlaying = false;
-            updatePlayButton();
-        });
-
-        player.addEventListener('ended', () => {
-            isPlaying = false;
-            statusElement.textContent = '✅ 播放完成';
-            statusElement.className = 'status';
-            updatePlayButton();
-        });
-
-        // 页面加载完成后初始化
-        window.addEventListener('load', () => {
-            statusElement.textContent = '🎵 正在准备播放器...';
-            setTimeout(() => {
-                loadAudio();
-                updatePlayButton();
-            }, 500);
         });
     </script>
 </body>
